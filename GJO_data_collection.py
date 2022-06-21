@@ -1,3 +1,4 @@
+# Google Colab Code
 !pip install selenium
 !apt-get update 
 !apt install chromium-chromedriver
@@ -8,7 +9,6 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from pathlib import Path
 from google.colab import drive
 from selenium.webdriver.common.by import By
 import requests
@@ -28,12 +28,18 @@ driver = webdriver.Chrome('chromedriver', options=options)
 driver.get("https://www.gjopen.com")
 username = driver.find_element(By.XPATH, "//*[@id='user_email']")
 password = driver.find_element(By.XPATH, "//*[@id='user_password']")
-username.send_keys("ben.k@wustl.edu")
-password.send_keys("qJ7C64Gb!CDqBsu")
+
+# ID (Email)
+username.send_keys("your_email@email.com")
+
+# Password
+password.send_keys("your_password")
+
 driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
 
 # auto scroll code source
 # https://medium.com/analytics-vidhya/using-python-and-selenium-to-scrape-infinite-scroll-web-pages-825d12c24ec7
+
 def auto_scroll(question_id):
   link_template = f"https://www.gjopen.com/questions/{question_id}"
   driver.get(link_template)
