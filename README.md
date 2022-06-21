@@ -1,2 +1,2 @@
-# SM22
+# Good Judgement Open 
 Summer 2022 Research Repository
