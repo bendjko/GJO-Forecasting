@@ -1,8 +1,7 @@
-# Google Colab Code
-!pip install selenium
-!apt-get update 
-!apt install chromium-chromedriver
-!cp /usr/lib/chromium-browser/chromedriver /usr/bin
+pip install selenium
+# apt-get update 
+# apt install chromium-chromedriver
+# cp /usr/lib/chromium-browser/chromedriver /usr/bin
 
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -13,9 +12,10 @@ from google.colab import drive
 from selenium.webdriver.common.by import By
 import requests
 import re
-import time
+import timeb
 import json 
 import time
+import os
 
 drive.mount('/content/gdrive/')
 
@@ -30,10 +30,12 @@ username = driver.find_element(By.XPATH, "//*[@id='user_email']")
 password = driver.find_element(By.XPATH, "//*[@id='user_password']")
 
 # ID (Email)
-username.send_keys("your_email@email.com")
+# username.send_keys("your_email@email.com")
+username.send_keys("ben.k@wustl.edu")
 
 # Password
-password.send_keys("your_password")
+# password.send_keys("your_password")
+password.send_keys("qJ7C64Gb!CDqBsu")
 
 driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
 
@@ -140,6 +142,9 @@ def get_all_questions(question_ids_file, path):
       with open(name, "w") as outfile:  
         json.dump(data, outfile) 
 
-ids_file("/content/gdrive/MyDrive/forecasting/", 1, 90)
+id_file = os.path.expanduser("~/Desktop/id_file_30.txt")
+save_path = os.path.expanduser("~/Desktop/data/")
 
-get_all_questions("/content/gdrive/MyDrive/forecasting/id_file.txt", "/content/gdrive/MyDrive/forecasting/data/")
+# ids_file("/content/gdrive/MyDrive/forecasting/", 1, 90)
+
+get_all_questions(id_file, save_path)
