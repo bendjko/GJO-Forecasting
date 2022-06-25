@@ -1,4 +1,4 @@
-pip install selenium
+# pip install selenium
 # apt-get update 
 # apt install chromium-chromedriver
 # cp /usr/lib/chromium-browser/chromedriver /usr/bin
@@ -142,7 +142,7 @@ def get_all_questions(question_ids_file, path):
       with open(name, "w") as outfile:  
         json.dump(data, outfile) 
 
-id_file = os.path.expanduser("~/Desktop/id_file_30.txt")
+id_file = os.path.expanduser("~/Desktop/id_file_modified.txt")
 save_path = os.path.expanduser("~/Desktop/data/")
 
 # ids_file("/content/gdrive/MyDrive/forecasting/", 1, 90)

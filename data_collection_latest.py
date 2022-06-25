@@ -1,21 +1,14 @@
-# pip3 install selenium
-# pip3 install chromedriver-py
-# cp /usr/lib/chromium-browser/chromedriver /usr/bin
-
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from selenium.webdriver.common.by import By
-from pathlib import Path
+from webdriver_manager.chrome import ChromeDriverManager
 import requests
 import re
 import time
 import json 
 import time
 import os
-from pathlib import Path
-from webdriver_manager.chrome import ChromeDriverManager
-
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
@@ -26,12 +19,7 @@ driver.get("https://www.gjopen.com")
 username = driver.find_element(By.XPATH, "//*[@id='user_email']")
 password = driver.find_element(By.XPATH, "//*[@id='user_password']")
 
-# ID (Email)
-# username.send_keys("your_email@email.com")
 username.send_keys("ben.k@wustl.edu")
-
-# Password
-# password.send_keys("your_password")
 password.send_keys("qJ7C64Gb!CDqBsu")
 
 driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
@@ -39,30 +27,18 @@ driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
 def auto_scroll(question_id):
   link_template = f"https://www.gjopen.com/questions/{question_id}"
   driver.get(link_template)
-  time.sleep(2) 
-
-  SCROLL_PAUSE_TIME = 0.5
-
-  # Get scroll height
+  time.sleep(3) 
+  SCROLL_PAUSE_TIME = 2
   last_height = driver.execute_script("return document.body.scrollHeight")
-
   while True:
-      # Scroll down to bottom
       driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-      # Wait to load page
       time.sleep(SCROLL_PAUSE_TIME)
-
-      # Calculate new scroll height and compare with last scroll height
       new_height = driver.execute_script("return document.body.scrollHeight")
       if new_height == last_height:
           break
       last_height = new_height
-
   soup = BeautifulSoup(driver.page_source, "html.parser")
-
   return soup
-
 
 def get_question_page(question_id):
   r = requests.get(f"https://www.gjopen.com/questions/{question_id}")
@@ -124,20 +100,21 @@ def get_question_data(question_id):
           "correct_forecast": correct_forecast,
           "preds": preds}
 
-# def ids_file(path, last_page_no, file_no):
-#   page_no = 1
-#   while (page_no <= last_page_no):
-#     with open(path + file_name, 'a') as f:
-#       driver.get(f"https://www.gjopen.com/questions?status=resolved&type=forecasting&page={page_no}")
-#       soup = BeautifulSoup(driver.page_source, 'html.parser')  
-#       rows = soup.find_all(class_="row-table-row")
-#       for row in rows:
-#         link = row.find("h5").find("a").get("href")
-#         question_id = int(re.match(r"https:\/\/www\.gjopen\.com\/questions\/(\d+)", link).groups()[0])
-#         f.write(str(question_id))
-#         f.write('\n')
-#       page_no +=1
-#   f.close()
+def ids_file(path, last_page_no, file_no):
+  file_name =  f"question_{file_no}"
+  page_no = 1
+  while (page_no <= last_page_no):
+    with open(path + file_name, 'a') as f:
+      driver.get(f"https://www.gjopen.com/questions?status=resolved&type=forecasting&page={page_no}")
+      soup = BeautifulSoup(driver.page_source, 'html.parser')  
+      rows = soup.find_all(class_="row-table-row")
+      for row in rows:
+        link = row.find("h5").find("a").get("href")
+        question_id = int(re.match(r"https:\/\/www\.gjopen\.com\/questions\/(\d+)", link).groups()[0])
+        f.write(str(question_id))
+        f.write('\n')
+      page_no +=1
+  f.close()
 
 def get_all_questions(question_ids_file, path):
   with open(question_ids_file, "r") as f:

@@ -69,5 +69,5 @@ def get_data(question_ids_file):
               written_justification_count +=1
   print(forecast_count, written_justification_count)
 
-id_file = os.path.expanduser("~/Desktop/id_file_modified.txt")
+id_file = os.path.expanduser("~/Desktop/id_file.txt")
 get_data(id_file)
