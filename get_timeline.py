@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import json 
 import os
+import pandas as pd
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
