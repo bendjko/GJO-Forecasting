@@ -19,7 +19,12 @@ driver.get("https://www.gjopen.com")
 username = driver.find_element(By.XPATH, "//*[@id='user_email']")
 password = driver.find_element(By.XPATH, "//*[@id='user_password']")
 
+# ID (Email)
+# username.send_keys("your_email@email.com")
 username.send_keys("ben.k@wustl.edu")
+
+# Password
+# password.send_keys("your_password")
 password.send_keys("qJ7C64Gb!CDqBsu")
 
 driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
@@ -100,11 +105,10 @@ def get_question_data(question_id):
           "correct_forecast": correct_forecast,
           "preds": preds}
 
-def ids_file(path, last_page_no, file_no):
-  file_name =  f"question_{file_no}"
+def ids_file(path, last_page_no):
   page_no = 1
   while (page_no <= last_page_no):
-    with open(path + file_name, 'a') as f:
+    with open(path, 'a') as f:
       driver.get(f"https://www.gjopen.com/questions?status=resolved&type=forecasting&page={page_no}")
       soup = BeautifulSoup(driver.page_source, 'html.parser')  
       rows = soup.find_all(class_="row-table-row")
@@ -124,7 +128,9 @@ def get_all_questions(question_ids_file, path):
       with open(name, "w") as outfile:  
         json.dump(data, outfile) 
 
-id_file = os.path.expanduser("~/Desktop/id_file_modified.txt")
-save_path = os.path.expanduser("~/Desktop/data/")
+id_file = os.path.expanduser("~/your/path/to/id/file")
+last_page_no = 90
+save_path = os.path.expanduser("~/your/path/to/data/")
 
+ids_file(id_file, last_page_no)
 get_all_questions(id_file, save_path)
