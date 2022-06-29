@@ -3,13 +3,14 @@ import pandas as pd
 import os
 import json
 import numpy as np
-import datetime 
+import datetime as dt
+from datetime import datetime, timedelta
 from sklearn.dummy import DummyRegressor
 
 def df(data_file):
   jdata = json.load(open(data_file))
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
-  dataframe['question_duration'] = (dataframe['close_date'] - dataframe['open_date']).dt.days
+  # dataframe['question_duration'] = (dataframe["close_date"] - dataframe["open_date"]).dt.days
   return dataframe
 
 def get_prediction_stack(dataframe):
@@ -18,7 +19,7 @@ def get_prediction_stack(dataframe):
     prediction_stack = np.row_stack(prediction)
   prediction_stack = pd.DataFrame(prediction_stack)
   prediction_stack = prediction_stack.rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
-  prediction_stack["days_past"] = (prediction_stack["date_time"] - dataframe['open_date']).dt.days
+  # prediction_stack["days_past"] = (prediction_stack["date_time"] - dataframe['open_date']).dt.days
   return prediction_stack
 
 def which_questions(dataframe):
