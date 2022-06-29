@@ -4,7 +4,7 @@ import os
 import json
 import numpy as np
 import datetime 
-from sklearn.dummy import DummyClassifier
+from sklearn.dummy import DummyRegressor
 
 def df(data_file):
   jdata = json.load(open(data_file))
@@ -45,7 +45,7 @@ def which_forecasts(dataframe):
   return all_forecasts, justified_forecasts
 
 def majority_baseline(dataframe):
-    dummyclf = DummyClassifier(strategy="most_frequent")
+    dummyclf = Du(strategy="most_frequent")
     preds = get_prediction_stack(dataframe).loc[:, "pred"]
 
 # consider where forecast options are binary, thus not giving the second option to be considered for forecasting answer
@@ -53,23 +53,22 @@ def majority_baselines(dataframe):
   # find max by row
   dummyclf = DummyClassifier(strategy="most_frequent")
   preds = get_prediction_stack(dataframe).loc[:, "pred"]
+  # test this if statement using question 6 - binary option questions
   if len(dataframe.loc["possible_answers", :]) == 2:
     for pred in preds:
-      if 
-  else:
-    fit_set = preds
-    max_index = []
-    for pred in fit_set:
-      max_index_row = np.argmax(pred, axis=1)
-      max_index.append(max_index_row)
-    dummyclf.fit(preds, fit_set)
-    dummyclf.predict(preds)
+      pred.append(1- pred[0])
+  fit_set = preds
+  max_index = []
+  for pred in fit_set:
+    max_index_row = np.argmax(pred, axis=1)
+    max_index.append(max_index_row)
+  dummyclf.fit(preds, fit_set)
+  dummyclf.predict(preds)
 
 def weighted_baseline(dataframe):
   # find max by column
   dummyclf = DummyClassifier(strategy="stratified")
   preds = get_prediction_stack(dataframe).loc[:, "pred"]
   prob_sum = np.sum(preds, axis=1)
-
   dummyclf.predict(prob_sum)
   
