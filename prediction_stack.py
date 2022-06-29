@@ -4,7 +4,6 @@ import json
 import numpy as np
 
 def df(data_file):
-  # data_file = f"question_{question_id}.json"
   jdata = json.load(open(data_file))
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
   return dataframe
@@ -14,16 +13,17 @@ def get_prediction_stack(data_file):
   prediction_stack = []
   for prediction in dataframe.loc["preds", :]:
     prediction_stack = np.vstack(prediction)
+    np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)                 
   prediction_stack = pd.DataFrame(prediction_stack)
   prediction_stack = prediction_stack.rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
   return prediction_stack
-
+  
 def basic_stats(data_file):
   table = get_prediction_stack(data_file)
   forecast_count = len(table.index)
   written_justification_count = 0
-  for text_input in pd.DataFrame(table.loc[:, "text"]):
-    if text_input != None:
+  for text_input in table.loc[:, "text"]:
+    if text_input != '':
       written_justification_count += 1
   return forecast_count, written_justification_count
 
@@ -37,10 +37,14 @@ def loop_all_data(id_file, path):
       total_forecast_count += forecast_count
       total_written_justification_count += written_justification_count
   return total_forecast_count, total_written_justification_count
-      
-test_path = os.path.expanduser("~/Desktop/")
-test_id_file = os.path.expanduser("~/Desktop/test_id.txt")
-test_data_file = os.path.expanduser("~/Desktop/question_2418.json")
 
-basic_stats(test_data_file)
-loop_all_data(test_id_file, test_path)
+def print_data_table(id_file, path):
+  total_forecast_count, total_written_justification_count = loop_all_data(id_file, path)  
+  dd = {'Question': 1788, 'Forecast': total_forecast_count, 'Written Justification': total_written_justification_count}
+  df = pd.DataFrame(data=dd, index=['Count'])
+  print(df)
+
+path = os.path.expanduser("~/Desktop/data/")
+id_file = os.path.expanduser("~/Desktop/id_file_2.txt")
+
+print_data_table(id_file, path)

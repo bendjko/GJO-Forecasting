@@ -38,10 +38,6 @@ def append_dates(question_ids_file, path):
       data_file = f"{path}question_{int(line)}.json"
       with open(data_file) as append_file:  
         jfile = json.load(append_file)
-      # jfile.append({
-      #     "open_date": open_date,
-      #     "close_date": close_date
-      # })
         jfile["open_date"] = open_date
         jfile["close_date"] = close_date
       with open(data_file, 'w') as json_file:
@@ -49,13 +45,8 @@ def append_dates(question_ids_file, path):
         # print(jfile)
 
 
-# id_file = os.path.expanduser("~/Desktop/id_file_modified.txt")
-# save_path = os.path.expanduser("~/Desktop/data/")
+id_file = os.path.expanduser("~/Desktop/id_file_2.txt")
+save_path = os.path.expanduser("~/Desktop/data/")
 
-# testing with question_2418.json
-
-test_data = os.path.expanduser("~/Desktop/test_id.txt")
-test_path = os.path.expanduser("~/Desktop/")
-
-append_dates(test_data, test_path)
+append_dates(id_file, save_path)
 

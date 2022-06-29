@@ -7,10 +7,9 @@ import datetime
 from sklearn.dummy import DummyClassifier
 
 def df(data_file):
-  # data_file = f"question_{question_id}.json"
   jdata = json.load(open(data_file))
-  dataframe['question_duration'] = (dataframe['close_date'] - dataframe['open_date']).dt.days
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
+  dataframe['question_duration'] = (dataframe['close_date'] - dataframe['open_date']).dt.days
   return dataframe
 
 def get_prediction_stack(dataframe):
@@ -22,56 +21,55 @@ def get_prediction_stack(dataframe):
   prediction_stack["days_past"] = (prediction_stack["date_time"] - dataframe['open_date']).dt.days
   return prediction_stack
 
+def which_questions(dataframe):
+  no_of_answers = len(dataframe.loc["possible_answers", :])
+  return no_of_answers
+
+def which_forecasters(dataframe):
+  days_open = dataframe['question_duration']
+  prediction_stack = get_prediction_stack(dataframe)
+  latest_predictions = prediction_stack.drop_duplicates(subset=['user_id'])
+  return latest_predictions
+
+# deal with all daily and all pasts since day would not be our parameter
+def all_daily_forecast(prediction_stack, day):
+  return prediction_stack[prediction_stack['days_past']==day]
+
+def all_pasts_forecast(predicition_stack, day):
+  return predicition_stack[predicition_stack['days_past']<=day]
+
+def which_forecasts(dataframe):
+  prediction_stack = get_prediction_stack(dataframe)
+  all_forecasts = prediction_stack
+  justified_forecasts = prediction_stack[prediction_stack.loc['text']!='']
+  return all_forecasts, justified_forecasts
+
 def majority_baseline(dataframe):
     dummyclf = DummyClassifier(strategy="most_frequent")
     preds = get_prediction_stack(dataframe).loc[:, "pred"]
-    
 
+# consider where forecast options are binary, thus not giving the second option to be considered for forecasting answer
+def majority_baselines(dataframe):
+  # find max by row
+  dummyclf = DummyClassifier(strategy="most_frequent")
+  preds = get_prediction_stack(dataframe).loc[:, "pred"]
+  if len(dataframe.loc["possible_answers", :]) == 2:
+    for pred in preds:
+      if 
+  else:
+    fit_set = preds
+    max_index = []
+    for pred in fit_set:
+      max_index_row = np.argmax(pred, axis=1)
+      max_index.append(max_index_row)
+    dummyclf.fit(preds, fit_set)
+    dummyclf.predict(preds)
 
-def baseline_data(dataframe):
+def weighted_baseline(dataframe):
+  # find max by column
+  dummyclf = DummyClassifier(strategy="stratified")
+  preds = get_prediction_stack(dataframe).loc[:, "pred"]
+  prob_sum = np.sum(preds, axis=1)
 
-# Criterion 3 - which forecasts?
-# # preds, boolean on textual input
-# - all
-# - only with textual justifications
-    preds = get_prediction_stack(dataframe)
-    yes_text_preds = []
-    no_text_preds = []
-    for text_input in pd.DataFrame(preds.loc[:, "text"]):
-        if text_input != None:
-            yes_text_preds.append(text_input)
-        else:
-            no_text_preds.append(text_input)
-# Criterion 2 - which forecasters?
-# # preds, user_id
-# - all daily forecasts
-# 
-    days = preds.loc[:, "days_past"]
-    day = 0
-    daystack = []
-    question_lifetime = dataframe["question_duration"]
-    while (day<=question_lifetime):
-        for pred in preds:
-            df.loc[df['column_name']]
-            daystack[day] = np.vstack(pred)
-        day+=1
-
-
-# - all pasts forecasts (possible with repeats from the same forecaster)
-# - last forecast by each forecaster who has participated (current day or past, but only the last one per forecaster)
-
-def which_questions(dataframe):
-# Criterion 1 - which questions?
-# # possible_answers
-# - all
-# - with 2 answers
-# - with 3 answers
-# - with 4 answers
-# - and so on
-    no_of_answers = len(dataframe["possible_answers"])
-
-
-
-
-
-
+  dummyclf.predict(prob_sum)
+  
