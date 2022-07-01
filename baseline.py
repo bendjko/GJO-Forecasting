@@ -69,24 +69,25 @@ def majority_baseline(dataframe):
     new_pred = np.zeros_like(pred.values)
     new_pred[np.arange(len(pred)), pred.values.argmax(1)] = 1
     total_prob += np.sum(new_pred, axis = 0)
-  # training_data = total_prob / total_prob.sum()
-  print(total_prob)
+  prediction_index = total_prob.argmax()
+  return dataframe.loc['possible_answers', 0][prediction_index]
 
 def weighted_baseline(dataframe):
   # find max by column
   preds = get_prediction_stack(dataframe).loc[:, "pred"]
-  total_prob = np.sum(preds, axis=0)
-  scaled_prob = total_prob / total_prob.sum()
+  if len(dataframe.loc["possible_answers", 0]) == 2:
+    for pred in preds:
+      pred.append(1- pred[0])
+  total_prob = np.zeros_like(preds[0])
 
-  zero_and_one = np.zeros_like(total_prob)
-  zero_and_one[np.arange(len(total_prob)), total_prob.argmax(1)] = 1
-  
-  dummy_regr = DummyRegressor(strategy="mean")
-  #test purpose
-  print(total_prob, scaled_prob, zero_and_one)
+  for pred in preds:
+    pred = pd.DataFrame(pred).transpose()
+    total_prob += np.sum(pred, axis = 0)
+  prediction_index = total_prob.argmax()
+  print(total_prob, prediction_index)
+  # return dataframe.loc['possible_answers', 0][prediction_index]
 
 test_data_file = os.path.expanduser("~/Desktop/question_6.json")
 dataframe = df(test_data_file)
-majority_baseline(dataframe)
 
-  
+weighted_baseline(dataframe)
