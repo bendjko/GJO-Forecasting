@@ -5,6 +5,7 @@ import json
 import numpy as np
 import datetime as dt
 from datetime import datetime, timedelta
+from responses import target
 from sklearn.dummy import DummyRegressor
 
 def df(data_file):
@@ -45,34 +46,34 @@ def which_forecasts(dataframe):
   justified_forecasts = prediction_stack[prediction_stack.loc['text']!='']
   return all_forecasts, justified_forecasts
 
+def get_correct_forecast_in_normalized_array(dataframe):
+  possible_answers = dataframe.loc['possible_answers', 0]
+  correct_answer = dataframe.loc['correct_answer', 0]
+  correct_index = possible_answers.index(correct_answer)
+  normalized_array = possible_answers
+  for i in range(len(normalized_array)):
+    if i == correct_index:
+      normalized_array[i] = 1
+    else:
+      normalized_array[i]=0
+  return normalized_array
+  
 def majority_baseline(dataframe):
   preds = get_prediction_stack(dataframe).loc[:, "pred"]
-  if len(dataframe.loc["possible_answers", :]) == 2:
+  if len(dataframe.loc["possible_answers", 0]) == 2:
     for pred in preds:
       pred.append(1- pred[0])
-  print (preds)
-  majority = preds
-  for pred in majority:
-    zero_and_one = np.zeros_like(pred)
-    zero_and_one[np.arange(len(pred)), pred.argmax(1)] = 1
-
-  total_prob = np.sum(majority, axis=0)
-  scaled_prob = total_prob / total_prob.sum()
-
-  zero_and_one = np.zeros_like(total_prob)
-  zero_and_one[np.arange(len(total_prob)), total_prob.argmax(1)] = 1
-  
-  dummy_regr = DummyRegressor(strategy="mean")
-  #test purpose
-  print(total_prob, scaled_prob, zero_and_one)
-
-  dummy_regr.fit(scaled_prob, zero_and_one)
-  dummy_regr.predict(scaled_prob)
-  dummy_regr.score(scaled_prob, zero_and_one)
+  total_prob = np.zeros_like(preds[0])
+  for pred in preds:
+    pred = pd.DataFrame(pred).transpose()
+    new_pred = np.zeros_like(pred.values)
+    new_pred[np.arange(len(pred)), pred.values.argmax(1)] = 1
+    total_prob += np.sum(new_pred, axis = 0)
+  # training_data = total_prob / total_prob.sum()
+  print(total_prob)
 
 def weighted_baseline(dataframe):
   # find max by column
-
   preds = get_prediction_stack(dataframe).loc[:, "pred"]
   total_prob = np.sum(preds, axis=0)
   scaled_prob = total_prob / total_prob.sum()
@@ -83,10 +84,6 @@ def weighted_baseline(dataframe):
   dummy_regr = DummyRegressor(strategy="mean")
   #test purpose
   print(total_prob, scaled_prob, zero_and_one)
-
-  dummy_regr.fit(scaled_prob, zero_and_one)
-  dummy_regr.predict(scaled_prob)
-  dummy_regr.score(scaled_prob, zero_and_one)
 
 test_data_file = os.path.expanduser("~/Desktop/question_6.json")
 dataframe = df(test_data_file)
