@@ -5,6 +5,8 @@ get_timeline -> absoluetely unnecessary; could have prevented writing more code 
 
 Data Overview:
 
-Questions Collected: 1788 
+Questions Collected: 1788
+
 Forecasts Collected: 1228978
+
 Total forecasts w/ written justifications: 273648
