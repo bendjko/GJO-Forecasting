@@ -3,10 +3,8 @@ import pandas as pd
 import os
 import json
 import numpy as np
-import datetime as dt
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from responses import target
-from sklearn.dummy import DummyRegressor
 
 def df(data_file):
   jdata = json.load(open(data_file))
@@ -22,28 +20,33 @@ def get_prediction_stack(dataframe):
   prediction_stack = []
   for prediction in dataframe.loc["preds", :]:
     prediction_stack = np.row_stack(prediction)
-
   prediction_stack = pd.DataFrame(prediction_stack)
   prediction_stack = prediction_stack.rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
-  # prediction_stack["days_past"] = (prediction_stack["date_time"] - dataframe['open_date']).dt.days
-  answer_date = datetime.fromisoformat(str(prediction_stack.loc["date_time"])[:-1])
+
   open_date = datetime.fromisoformat(str(dataframe.loc["open_date", 0])[:-1])
-  question_duration = (answer_date - open_date).days
-  df2 = pd.DataFrame([question_duration], index=['question_duration'])
-  dataframe = dataframe.append(df2)
-  print(dataframe)
+
+  day_past = []
+  for answer_date in prediction_stack.loc[:, "date_time"]:
+    days_past = (datetime.fromisoformat(str(answer_date[:-1])) - open_date).days
+    day_past = np.vstack(days_past)
+  
+  print(day_past)
+
+
+  # question_duration = (answer_date - open_date).days
+  # df2 = pd.DataFrame([question_duration], index=['question_duration'])
+  # dataframe = dataframe.append(df2)
   return prediction_stack
 
 def which_questions(dataframe):
   no_of_answers = len(dataframe.loc["possible_answers", :])
   return no_of_answers
 
-# deal with all daily and all pasts since day would not be our parameter
 def all_daily_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']==day]
 
-def all_pasts_forecast(predicition_stack, day):
-  return predicition_stack[predicition_stack['days_past']<=day]
+def all_pasts_forecast(prediction_stack, day):
+  return prediction_stack[prediction_stack['days_past']<=day]
 
 def latest_forecast(dataframe):
   prediction_stack = get_prediction_stack(dataframe)
@@ -99,5 +102,17 @@ def variations(data_file):
 
 test_file = os.path.expanduser("~/Desktop/question_6.json")
 dataframe = df(test_file)
-print(get_prediction_stack(dataframe))
+get_prediction_stack(dataframe)
 # print(latest_forecast(dataframe))
+
+# dataframe syntax
+# question_id                                                        6
+# title              Will a trilateral meeting take place between C...
+# possible_answers                                           [Yes, No]
+# crowd_forecast                                            [0.0, 1.0]
+# correct_answer                                                    No
+# correct_forecast                                                 1.0
+# preds              [[61, 2016-01-01T02:37:58Z, [0.0], ], [6303, 2...
+# open_date                                       2015-09-01T16:37:50Z
+# close_date                                      2015-12-31T23:00:11Z
+# question_duration                                                121
