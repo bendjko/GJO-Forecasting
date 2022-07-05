@@ -22,20 +22,11 @@ def get_prediction_stack(dataframe):
     prediction_stack = np.row_stack(prediction)
   prediction_stack = pd.DataFrame(prediction_stack)
   prediction_stack = prediction_stack.rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
-
   open_date = datetime.fromisoformat(str(dataframe.loc["open_date", 0])[:-1])
-
   day_past = []
   for answer_date in prediction_stack.loc[:, "date_time"]:
-    days_past = (datetime.fromisoformat(str(answer_date[:-1])) - open_date).days
-    day_past = np.vstack(days_past)
-  
-  print(day_past)
-
-
-  # question_duration = (answer_date - open_date).days
-  # df2 = pd.DataFrame([question_duration], index=['question_duration'])
-  # dataframe = dataframe.append(df2)
+    day_past.append((datetime.fromisoformat(str(answer_date[:-1])) - open_date).days)
+  prediction_stack["days_past"] = day_past
   return prediction_stack
 
 def which_questions(dataframe):
