@@ -61,6 +61,9 @@ def correct_possible_answer(dataframe):
 def daily_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']==day]
 
+def quartile_forecast(prediction_stack, quartile):
+  return prediction_stack[prediction_stack['quartile']==quartile]
+
 def past_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']<=day]
 
@@ -114,7 +117,6 @@ def get_correct_forecast_in_normalized_array(dataframe):
       normalized_array[i]=0
   return normalized_array
 
-# baselines
 def majority_baseline(prediction_stack):
   preds = prediction_stack.loc[:, "pred"]
   total_prob = np.zeros_like(preds.iloc[0])
@@ -138,3 +140,40 @@ def weighted_baseline(prediction_stack):
 # def accuracy(prediction_stack):
 #   length = len(prediction_stack)
 #   while(length >= 0):
+
+def baselines(dataframe):
+  correct_answer, possible_answers = correct_possible_answer(dataframe)
+  prediction_stack = get_prediction_stack(dataframe)
+  longest_day = prediction_stack["days_past"].max()
+  quartile = 4
+
+  first_quartile_majority_tracker = 0
+  first_quartile_weighted_tracker = 0
+
+  second_quartile_majority_tracker = 0
+  second_quartile_weighted_tracker = 0
+
+  third_quartile_majority_tracker = 0
+  third_quartile_weighted_tracker = 0
+
+  fourth_quartile_majority_tracker = 0
+  fourth_quartile_weighted_tracker = 0
+
+  daily_forecast_majority_tracker = 0
+  daily_forecast_weighted_tracker = 0
+  day_counter = 0
+  while (longest_day >= 0):
+    day_forecast = daily_forecast(prediction_stack, longest_day)
+    if len(day_forecast['pred']) >= 1:
+        day_past_forecast = past_forecast(prediction_stack, longest_day)
+        daily_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_forecast))
+        daily_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_forecast))
+        day_counter+=1
+    longest_day -=1
+  while (quartile>=0):
+    quartile_forecast = quartile_forecast(prediction_stack, quartile)
+    if quartile == 4: 
+      fourth_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecast))
+      daily_forecast_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecast))
+  return daily_forecast_majority_tracker/day_counter, daily_forecast_weighted_tracker/day_counter
+
