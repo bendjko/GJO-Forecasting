@@ -44,12 +44,7 @@ def print_data_table(id_file, path):
   df = pd.DataFrame(data=dd, index=['Count'])
   print(df)
 
-# path = os.path.expanduser("~/Desktop/data/")
-# id_file = os.path.expanduser("~/Desktop/id_file_2.txt")
-
-# print_data_table(id_file, path)
-
 path = os.path.expanduser("~/Desktop/data/")
-id_file = os.path.expanduser("~/Desktop/id_file_2.txt")
+id_file = os.path.expanduser("~/Desktop/id_file.txt")
 
 print_data_table(id_file, path)

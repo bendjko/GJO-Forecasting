@@ -6,6 +6,12 @@ import numpy as np
 from datetime import datetime
 from responses import target
 
+def read_id_file(id_file, path):
+  with open(id_file, "r") as f:
+    for line in f.readlines():
+      dataframe = df(f"{path}question_{int(line)}.json")
+      prediction_stack = get_prediction_stack(dataframe)
+
 def df(data_file):
   jdata = json.load(open(data_file))
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
@@ -20,29 +26,75 @@ def get_prediction_stack(dataframe):
   prediction_stack = []
   for prediction in dataframe.loc["preds", :]:
     prediction_stack = np.row_stack(prediction)
-  prediction_stack = pd.DataFrame(prediction_stack)
-  prediction_stack = prediction_stack.rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
+  prediction_stack = pd.DataFrame(prediction_stack).rename(columns={0: "user_id", 1: "date_time", 2:"pred", 3:"text"})
   open_date = datetime.fromisoformat(str(dataframe.loc["open_date", 0])[:-1])
   day_past = []
+  quartile = []
+  question_duration = dataframe.loc["question_duration", 0]/4
   for answer_date in prediction_stack.loc[:, "date_time"]:
-    day_past.append((datetime.fromisoformat(str(answer_date[:-1])) - open_date).days)
+    days_past = (datetime.fromisoformat(str(answer_date[:-1])) - open_date).days
+    day_past.append(days_past)
+    i=4
+    while (i<=4):
+      if (days_past >= question_duration * i):
+        quartile.append(i)
+        break
+      i-=1
   prediction_stack["days_past"] = day_past
+  prediction_stack["quartile"] = quartile
+  preds = prediction_stack.loc[:, "pred"]
+  if len(prediction_stack.loc[0, "pred"]) == 1:
+    for pred in preds:
+      pred.append(1- pred[0])
   return prediction_stack
 
+# last thing to deal with since it's not returning prediction_stacks
 def which_questions(dataframe):
   no_of_answers = len(dataframe.loc["possible_answers", :])
   return no_of_answers
 
-def all_daily_forecast(prediction_stack, day):
+def correct_possible_answer(dataframe):
+  correct_answer = dataframe.loc['correct_answer', 0]
+  possible_answers = dataframe.loc['possible_answers', 0]
+  return correct_answer, possible_answers
+
+def daily_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']==day]
 
-def all_pasts_forecast(prediction_stack, day):
+def past_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']<=day]
 
-def latest_forecast(dataframe):
-  prediction_stack = get_prediction_stack(dataframe)
+def last_forecast(prediction_stack):
   latest_predictions = prediction_stack.drop_duplicates(subset=['user_id'])
   return latest_predictions
+
+def each_day(dataframe):
+  correct_answer, possible_answers = correct_possible_answer(dataframe)
+  prediction_stack = get_prediction_stack(dataframe)
+  longest_day = prediction_stack["days_past"].max()
+  daily_forecast_majority_tracker = 0
+  daily_forecast_weighted_tracker = 0
+  past_forecast_majority_tracker = 0
+  past_forecast_weighted_tracker = 0
+  day_counter = 0
+  while (longest_day >= 0):
+    day_forecast = daily_forecast(prediction_stack, longest_day)
+    if len(day_forecast['pred']) >= 1:
+        day_past_forecast = past_forecast(prediction_stack, longest_day)
+        daily_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_forecast))
+        daily_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_forecast))
+        past_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_past_forecast))
+        past_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_past_forecast))
+        day_counter+=1
+    longest_day -=1
+  return [daily_forecast_majority_tracker/day_counter, daily_forecast_weighted_tracker/day_counter, past_forecast_majority_tracker/day_counter, past_forecast_weighted_tracker/day_counter]
+
+def correct_day_counter(correct_answer, possible_answers, prediction_index):
+  predicted_answer = possible_answers[prediction_index]
+  if correct_answer == predicted_answer:
+    return 1
+  else: 
+    return 0
 
 def which_forecasts(dataframe):
   prediction_stack = get_prediction_stack(dataframe)
@@ -61,49 +113,28 @@ def get_correct_forecast_in_normalized_array(dataframe):
     else:
       normalized_array[i]=0
   return normalized_array
-  
-def majority_baseline(dataframe):
-  preds = get_prediction_stack(dataframe).loc[:, "pred"]
-  if len(dataframe.loc["possible_answers", 0]) == 2:
-    for pred in preds:
-      pred.append(1- pred[0])
-  total_prob = np.zeros_like(preds[0])
+
+# baselines
+def majority_baseline(prediction_stack):
+  preds = prediction_stack.loc[:, "pred"]
+  total_prob = np.zeros_like(preds.iloc[0])
   for pred in preds:
     pred = pd.DataFrame(pred).transpose()
     new_pred = np.zeros_like(pred.values)
     new_pred[np.arange(len(pred)), pred.values.argmax(1)] = 1
     total_prob += np.sum(new_pred, axis = 0)
   prediction_index = total_prob.argmax()
-  return dataframe.loc['possible_answers', 0][prediction_index]
+  return prediction_index
 
-def weighted_baseline(dataframe):
-  preds = get_prediction_stack(dataframe).loc[:, "pred"]
-  if len(dataframe.loc["possible_answers", 0]) == 2:
-    for pred in preds:
-      pred.append(1- pred[0])
-  total_prob = np.zeros_like(preds[0])
+def weighted_baseline(prediction_stack):
+  preds = prediction_stack.loc[:, "pred"]
+  total_prob = np.zeros_like(preds.iloc[0])
   for pred in preds:
     pred = pd.DataFrame(pred).transpose()
     total_prob += np.sum(pred, axis = 0)
   prediction_index = total_prob.argmax()
-  return dataframe.loc['possible_answers', 0][prediction_index]
+  return prediction_index
 
-def variations(data_file):
-  return None
-
-test_file = os.path.expanduser("~/Desktop/question_6.json")
-dataframe = df(test_file)
-get_prediction_stack(dataframe)
-# print(latest_forecast(dataframe))
-
-# dataframe syntax
-# question_id                                                        6
-# title              Will a trilateral meeting take place between C...
-# possible_answers                                           [Yes, No]
-# crowd_forecast                                            [0.0, 1.0]
-# correct_answer                                                    No
-# correct_forecast                                                 1.0
-# preds              [[61, 2016-01-01T02:37:58Z, [0.0], ], [6303, 2...
-# open_date                                       2015-09-01T16:37:50Z
-# close_date                                      2015-12-31T23:00:11Z
-# question_duration                                                121
+# def accuracy(prediction_stack):
+#   length = len(prediction_stack)
+#   while(length >= 0):
