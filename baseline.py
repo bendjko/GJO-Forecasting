@@ -34,10 +34,10 @@ def get_prediction_stack(dataframe):
   for answer_date in prediction_stack.loc[:, "date_time"]:
     days_past = (datetime.fromisoformat(str(answer_date[:-1])) - open_date).days
     day_past.append(days_past)
-    i=4
-    while (i<=4):
+    i=3
+    while (i<=3):
       if (days_past >= question_duration * i):
-        quartile.append(i)
+        quartile.append(i+1)
         break
       i-=1
   prediction_stack["days_past"] = day_past
@@ -67,9 +67,13 @@ def quartile_forecast(prediction_stack, quartile):
 def past_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']<=day]
 
-def last_forecast(prediction_stack):
-  latest_predictions = prediction_stack.drop_duplicates(subset=['user_id'])
-  return latest_predictions
+def active_forecast_ten_days_prior(prediction_stack, day):
+  if day <= 10:
+    return prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
+  else: 
+    day-=10
+    return prediction_stack[prediction_stack['days_past']>=day].drop_duplicates(subset=['user_id'])
+
 
 def each_day(dataframe):
   correct_answer, possible_answers = correct_possible_answer(dataframe)
@@ -145,35 +149,82 @@ def baselines(dataframe):
   correct_answer, possible_answers = correct_possible_answer(dataframe)
   prediction_stack = get_prediction_stack(dataframe)
   longest_day = prediction_stack["days_past"].max()
-  quartile = 4
+  # quartile = 4
 
-  first_quartile_majority_tracker = 0
-  first_quartile_weighted_tracker = 0
+  # first_quartile_majority_tracker = 0
+  # first_quartile_weighted_tracker = 0
 
-  second_quartile_majority_tracker = 0
-  second_quartile_weighted_tracker = 0
+  # second_quartile_majority_tracker = 0
+  # second_quartile_weighted_tracker = 0
 
-  third_quartile_majority_tracker = 0
-  third_quartile_weighted_tracker = 0
+  # third_quartile_majority_tracker = 0
+  # third_quartile_weighted_tracker = 0
 
-  fourth_quartile_majority_tracker = 0
-  fourth_quartile_weighted_tracker = 0
+  # fourth_quartile_majority_tracker = 0
+  # fourth_quartile_weighted_tracker = 0
 
   daily_forecast_majority_tracker = 0
   daily_forecast_weighted_tracker = 0
+  active_forecast_majority_tracker=0
+  active_forecast_weighted_tracker=0
   day_counter = 0
+
   while (longest_day >= 0):
     day_forecast = daily_forecast(prediction_stack, longest_day)
     if len(day_forecast['pred']) >= 1:
-        day_past_forecast = past_forecast(prediction_stack, longest_day)
+        day_past_forecast = active_forecast_ten_days_prior(prediction_stack, longest_day)
         daily_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_forecast))
         daily_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_forecast))
+        active_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_past_forecast))
+        active_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_past_forecast))
         day_counter+=1
     longest_day -=1
-  while (quartile>=0):
-    quartile_forecast = quartile_forecast(prediction_stack, quartile)
-    if quartile == 4: 
-      fourth_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecast))
-      daily_forecast_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecast))
-  return daily_forecast_majority_tracker/day_counter, daily_forecast_weighted_tracker/day_counter
+  # while (quartile>=1):
+  #   quartile_forecasts = quartile_forecast(prediction_stack, quartile)
+  #   if quartile == 4: 
+  #     fourth_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
+  #     fourth_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
+  #     fourth_quartile_length = len(quartile_forecasts)
+  #   if quartile == 3: 
+  #     third_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
+  #     third_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
+  #     third_quartile_length = len(quartile_forecasts)
+  #   if quartile == 2: 
+  #     second_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
+  #     second_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
+  #     second_quartile_length = len(quartile_forecasts)
+  #   if quartile == 1: 
+  #     first_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
+  #     first_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
+  #     first_quartile_length = len(quartile_forecasts)
+  #   quartile -=1
+  return [daily_forecast_majority_tracker/day_counter, 
+          daily_forecast_weighted_tracker/day_counter,
+          active_forecast_majority_tracker/day_counter,
+          active_forecast_weighted_tracker/day_counter
+          # first_quartile_majority_tracker/first_quartile_length,
+          # first_quartile_weighted_tracker/first_quartile_length,
+          # second_quartile_majority_tracker/second_quartile_length,
+          # second_quartile_weighted_tracker/second_quartile_length,
+          # third_quartile_majority_tracker/third_quartile_length,
+          # third_quartile_weighted_tracker/third_quartile_length,
+          # fourth_quartile_majority_tracker/fourth_quartile_length,
+          # fourth_quartile_weighted_tracker/fourth_quartile_length,
+          # day_counter,
+          # first_quartile_length,
+          # second_quartile_length,
+          # third_quartile_length,
+          # fourth_quartile_length
+          ]
+
+def all_questions_baseline(id_file, path):
+  question_counter = 0
+  total_baseline = np.array([0, 0, 0, 0])
+  with open(id_file, "r") as f:
+    for line in f.readlines():
+      data_file = f"{path}question_{int(line)}.json"
+      each_baseline = np.array(baselines(df(data_file)))
+      total_baseline = np.add(total_baseline, each_baseline)
+      question_counter +=1
+  return total_baseline/question_counter
 
