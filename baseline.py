@@ -220,9 +220,12 @@ def baselines(dataframe):
 def all_questions_baseline(id_file, path):
   question_counter = 0
   total_baseline = np.array([0, 0, 0, 0])
+  id_counter = 0
   with open(id_file, "r") as f:
     for line in f.readlines():
       data_file = f"{path}question_{int(line)}.json"
+      id_counter +=1
+      print(id_counter)
       each_baseline = np.array(baselines(df(data_file)))
       total_baseline = np.add(total_baseline, each_baseline)
       question_counter +=1
