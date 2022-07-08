@@ -10,3 +10,5 @@ Questions Collected: 1788
 Forecasts Collected: 1228978
 
 Total forecasts w/ written justifications: 273648
+
+[0.70786752 0.71518103 0.81939237 0.82636818]
