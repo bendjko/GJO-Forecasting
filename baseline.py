@@ -67,7 +67,6 @@ def quartile_forecast(prediction_stack, quartile):
 def past_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']<=day]
 
-# this code is wrong, i should redo active forecast
 def active_forecast_ten_days_prior(prediction_stack, day):
   if day <= 10:
     return prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
