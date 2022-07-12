@@ -4,12 +4,6 @@ import numpy as np
 from datetime import datetime
 import warnings
 
-def read_id_file(id_file, path):
-  with open(id_file, "r") as f:
-    for line in f.readlines():
-      dataframe = df(f"{path}question_{int(line)}.json")
-      prediction_stack = get_prediction_stack(dataframe)
-
 def df(data_file):
   jdata = json.load(open(data_file))
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
@@ -202,9 +196,6 @@ def subset_forecast_count(sub_id_file, path):
       dataframe = df(data_file)
       all_forecasts, justified_forecasts, not_justified_forecasts = which_forecasts(dataframe)
       no_of_questions += [len(all_forecasts),len(justified_forecasts),len(not_justified_forecasts)]
-      # all_baseline = baselines(dataframe)
-      # text_baseline = baselines(df(justified_forecasts))
-      # no_text_baseline = baselines(df(not_justified_forecasts))
   return no_of_questions
 
 def loop_through_subset(id_file_path, data_file_path):
