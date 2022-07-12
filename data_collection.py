@@ -1,13 +1,11 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import requests
 import re
 import time
 import json 
-import time
 import os
 
 options = webdriver.ChromeOptions()
@@ -19,13 +17,8 @@ driver.get("https://www.gjopen.com")
 username = driver.find_element(By.XPATH, "//*[@id='user_email']")
 password = driver.find_element(By.XPATH, "//*[@id='user_password']")
 
-# ID (Email)
 # username.send_keys("your_email@email.com")
-username.send_keys("ben.k@wustl.edu")
-
-# Password
 # password.send_keys("your_password")
-password.send_keys("qJ7C64Gb!CDqBsu")
 
 driver.find_element(By.XPATH, "//*[@id='new_user']/input[2]").click()
 
@@ -66,7 +59,11 @@ def get_question_page(question_id):
     forecast = float(forecast.text.replace("%",""))/100
     crowd_forecast.append(forecast)
 
-  return title, possible_answers, crowd_forecast, correct_answer, correct_forecast
+  date = soup.find("div", class_="question-openclose").find_all("small")
+  open_date = date[0].find("span").get("data-localizable-timestamp")
+  close_date = date[1].find("span").get("data-localizable-timestamp")
+
+  return title, possible_answers, crowd_forecast, correct_answer, correct_forecast, open_date, close_date
 
 def get_forecasts(question_id):
   page = auto_scroll(question_id)
@@ -94,7 +91,7 @@ def get_forecasts(question_id):
   return preds
 
 def get_question_data(question_id):
-  title, possible_answers, crowd_forecast, correct_answer, correct_forecast = get_question_page(question_id)
+  title, possible_answers, crowd_forecast, correct_answer, correct_forecast, open_date, close_date = get_question_page(question_id)
   preds = get_forecasts(question_id)
   question_id=question_id
   return {"question_id": question_id,
@@ -103,7 +100,9 @@ def get_question_data(question_id):
           "crowd_forecast": crowd_forecast,
           "correct_answer" : correct_answer,
           "correct_forecast": correct_forecast,
-          "preds": preds}
+          "preds": preds,
+          "open_date": open_date,
+          "close_date": close_date}
 
 def ids_file(path, last_page_no):
   page_no = 1

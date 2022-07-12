@@ -48,7 +48,6 @@ def get_prediction_stack(dataframe):
       pred.append(1- pred[0])
   return prediction_stack
 
-# last thing to deal with since it's not returning prediction_stacks
 def which_questions(dataframe):
   no_of_answers = len(dataframe.loc["possible_answers", 0])
   return no_of_answers
@@ -68,12 +67,14 @@ def past_forecast(prediction_stack, day):
   return prediction_stack[prediction_stack['days_past']<=day]
 
 def active_forecast_ten_days_prior(prediction_stack, day):
-  if day <= 10:
-    return prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
-  else: 
+ if day <= 10:
+    first_filter = prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
+    return first_filter
+ else:
+    first_filter= prediction_stack[prediction_stack['days_past']<=day]
     day-=10
-    return prediction_stack[prediction_stack['days_past']>=day].drop_duplicates(subset=['user_id'])
-
+    second_filter = first_filter[first_filter['days_past']>=day].drop_duplicates(subset=['user_id'])
+    return second_filter
 
 def each_day(dataframe):
   correct_answer, possible_answers = correct_possible_answer(dataframe)
@@ -102,12 +103,6 @@ def correct_day_counter(correct_answer, possible_answers, prediction_index):
     return 1
   else: 
     return 0
-
-def which_forecasts(dataframe):
-  prediction_stack = get_prediction_stack(dataframe)
-  all_forecasts = prediction_stack
-  justified_forecasts = prediction_stack[prediction_stack.loc['text']!='']
-  return all_forecasts, justified_forecasts
 
 def get_correct_forecast_in_normalized_array(dataframe):
   possible_answers = dataframe.loc['possible_answers', 0]
@@ -141,34 +136,15 @@ def weighted_baseline(prediction_stack):
   prediction_index = total_prob.argmax()
   return prediction_index
 
-# def accuracy(prediction_stack):
-#   length = len(prediction_stack)
-#   while(length >= 0):
-
 def baselines(dataframe):
   correct_answer, possible_answers = correct_possible_answer(dataframe)
   prediction_stack = get_prediction_stack(dataframe)
   longest_day = prediction_stack["days_past"].max()
-  # quartile = 4
-
-  # first_quartile_majority_tracker = 0
-  # first_quartile_weighted_tracker = 0
-
-  # second_quartile_majority_tracker = 0
-  # second_quartile_weighted_tracker = 0
-
-  # third_quartile_majority_tracker = 0
-  # third_quartile_weighted_tracker = 0
-
-  # fourth_quartile_majority_tracker = 0
-  # fourth_quartile_weighted_tracker = 0
-
   daily_forecast_majority_tracker = 0
   daily_forecast_weighted_tracker = 0
   active_forecast_majority_tracker=0
   active_forecast_weighted_tracker=0
   day_counter = 0
-
   while (longest_day >= 0):
     day_forecast = daily_forecast(prediction_stack, longest_day)
     if len(day_forecast['pred']) >= 1:
@@ -179,42 +155,10 @@ def baselines(dataframe):
         active_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_past_forecast))
         day_counter+=1
     longest_day -=1
-  # while (quartile>=1):
-  #   quartile_forecasts = quartile_forecast(prediction_stack, quartile)
-  #   if quartile == 4: 
-  #     fourth_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
-  #     fourth_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
-  #     fourth_quartile_length = len(quartile_forecasts)
-  #   if quartile == 3: 
-  #     third_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
-  #     third_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
-  #     third_quartile_length = len(quartile_forecasts)
-  #   if quartile == 2: 
-  #     second_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
-  #     second_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
-  #     second_quartile_length = len(quartile_forecasts)
-  #   if quartile == 1: 
-  #     first_quartile_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(quartile_forecasts))
-  #     first_quartile_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(quartile_forecasts))
-  #     first_quartile_length = len(quartile_forecasts)
-  #   quartile -=1
   return [daily_forecast_majority_tracker/day_counter, 
           daily_forecast_weighted_tracker/day_counter,
           active_forecast_majority_tracker/day_counter,
           active_forecast_weighted_tracker/day_counter
-          # first_quartile_majority_tracker/first_quartile_length,
-          # first_quartile_weighted_tracker/first_quartile_length,
-          # second_quartile_majority_tracker/second_quartile_length,
-          # second_quartile_weighted_tracker/second_quartile_length,
-          # third_quartile_majority_tracker/third_quartile_length,
-          # third_quartile_weighted_tracker/third_quartile_length,
-          # fourth_quartile_majority_tracker/fourth_quartile_length,
-          # fourth_quartile_weighted_tracker/fourth_quartile_length,
-          # day_counter,
-          # first_quartile_length,
-          # second_quartile_length,
-          # third_quartile_length,
-          # fourth_quartile_length
           ]
 
 def all_questions_baseline(id_file, path):
@@ -225,9 +169,33 @@ def all_questions_baseline(id_file, path):
     for line in f.readlines():
       data_file = f"{path}question_{int(line)}.json"
       id_counter +=1
-      print(id_counter)
       each_baseline = np.array(baselines(df(data_file)))
       total_baseline = np.add(total_baseline, each_baseline)
       question_counter +=1
   return total_baseline/question_counter
 
+def export_questions_by_number_of_possible_answers(id_file, data_path, save_path):
+  answer_count = 0
+  with open(id_file, "r") as f:
+    for line in f.readlines():
+      question_id = int(line)  
+      data_file = f"{data_path}question_{question_id}.json"
+      answer_count = which_questions(df(data_file))
+      sub_file = f"{save_path}{answer_count}_questions.txt"
+      with open(sub_file, "a") as f:
+        f.write(str(question_id))
+        f.write("\n")
+
+def which_forecasts(dataframe):
+  prediction_stack = get_prediction_stack(dataframe)
+  all_forecasts = prediction_stack
+  justified_forecasts = prediction_stack[prediction_stack.loc['text']!='']
+  return all_forecasts, justified_forecasts
+
+def subset_baselines(sub_id_file, path):
+  with open(sub_id_file, "r") as f:
+    for line in f.readlines():
+      question_id = int(line)  
+      data_file = f"{path}question_{question_id}.json"
+      all_forecasts, justified_forecasts = which_forecasts(df(data_file))
+      print(len(all_forecasts), len(justified_forecasts), justified_forecasts)
