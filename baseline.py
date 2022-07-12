@@ -1,10 +1,8 @@
-from tkinter import W
 import pandas as pd
-import os
 import json
 import numpy as np
 from datetime import datetime
-from responses import target
+import warnings
 
 def read_id_file(id_file, path):
   with open(id_file, "r") as f:
@@ -20,6 +18,8 @@ def df(data_file):
   question_duration = (close_date - open_date).days
   df2 = pd.DataFrame([question_duration], index=['question_duration'])
   dataframe = dataframe.append(df2)
+  warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
+  warnings.simplefilter(action='ignore', category=FutureWarning)
   return dataframe
 
 def get_prediction_stack(dataframe):
@@ -189,13 +189,28 @@ def export_questions_by_number_of_possible_answers(id_file, data_path, save_path
 def which_forecasts(dataframe):
   prediction_stack = get_prediction_stack(dataframe)
   all_forecasts = prediction_stack
-  justified_forecasts = prediction_stack[prediction_stack.loc['text']!='']
-  return all_forecasts, justified_forecasts
+  justified_forecasts = prediction_stack[prediction_stack['text']!='']
+  not_justified_forecasts = prediction_stack[prediction_stack['text']=='']
+  return all_forecasts, justified_forecasts, not_justified_forecasts
 
-def subset_baselines(sub_id_file, path):
+def subset_forecast_count(sub_id_file, path):
+  no_of_questions = np.array([0, 0, 0])
   with open(sub_id_file, "r") as f:
     for line in f.readlines():
       question_id = int(line)  
       data_file = f"{path}question_{question_id}.json"
-      all_forecasts, justified_forecasts = which_forecasts(df(data_file))
-      print(len(all_forecasts), len(justified_forecasts), justified_forecasts)
+      dataframe = df(data_file)
+      all_forecasts, justified_forecasts, not_justified_forecasts = which_forecasts(dataframe)
+      no_of_questions += [len(all_forecasts),len(justified_forecasts),len(not_justified_forecasts)]
+      # all_baseline = baselines(dataframe)
+      # text_baseline = baselines(df(justified_forecasts))
+      # no_text_baseline = baselines(df(not_justified_forecasts))
+  return no_of_questions
+
+def loop_through_subset(id_file_path, data_file_path):
+  options = 2
+  while (options <= 13):
+    id_file = f"{id_file_path}{options}_questions.txt"
+    subset_count = subset_forecast_count(id_file, data_file_path)
+    print(options, subset_count)
+    options+=1
