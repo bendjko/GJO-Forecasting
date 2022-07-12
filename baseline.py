@@ -57,9 +57,6 @@ def daily_forecast(prediction_stack, day):
 def quartile_forecast(prediction_stack, quartile):
   return prediction_stack[prediction_stack['quartile']==quartile]
 
-def past_forecast(prediction_stack, day):
-  return prediction_stack[prediction_stack['days_past']<=day]
-
 def active_forecast_ten_days_prior(prediction_stack, day):
  if day <= 10:
     first_filter = prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
@@ -69,27 +66,6 @@ def active_forecast_ten_days_prior(prediction_stack, day):
     day-=10
     second_filter = first_filter[first_filter['days_past']>=day].drop_duplicates(subset=['user_id'])
     return second_filter
-
-def each_day(dataframe):
-  correct_answer, possible_answers = correct_possible_answer(dataframe)
-  prediction_stack = get_prediction_stack(dataframe)
-  longest_day = prediction_stack["days_past"].max()
-  daily_forecast_majority_tracker = 0
-  daily_forecast_weighted_tracker = 0
-  past_forecast_majority_tracker = 0
-  past_forecast_weighted_tracker = 0
-  day_counter = 0
-  while (longest_day >= 0):
-    day_forecast = daily_forecast(prediction_stack, longest_day)
-    if len(day_forecast['pred']) >= 1:
-        day_past_forecast = past_forecast(prediction_stack, longest_day)
-        daily_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_forecast))
-        daily_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_forecast))
-        past_forecast_majority_tracker += correct_day_counter(correct_answer, possible_answers, majority_baseline(day_past_forecast))
-        past_forecast_weighted_tracker += correct_day_counter(correct_answer, possible_answers, weighted_baseline(day_past_forecast))
-        day_counter+=1
-    longest_day -=1
-  return [daily_forecast_majority_tracker/day_counter, daily_forecast_weighted_tracker/day_counter, past_forecast_majority_tracker/day_counter, past_forecast_weighted_tracker/day_counter]
 
 def correct_day_counter(correct_answer, possible_answers, prediction_index):
   predicted_answer = possible_answers[prediction_index]

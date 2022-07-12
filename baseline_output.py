@@ -8,6 +8,7 @@ path = os.path.expanduser("~/Desktop/data/")
 print(all_questions_baseline(id_file, path))
 # [daily forecast majority baseline, daily forecast weighed baseline, active forecast majority baseline, active forecast weighted baseline]
 # [0.70786752 0.71518103 0.81939237 0.82636818]
+# [0.71961468 0.72112447]
 
 loop_through_subset(subset_id_file, path)
 # [# of total forecasts, # of forecasts w/o justifications, # of forecasts w/ justifications]
