@@ -127,9 +127,9 @@ def get_all_questions(question_ids_file, path):
       with open(name, "w") as outfile:  
         json.dump(data, outfile) 
 
-id_file = os.path.expanduser("~/your/path/to/id/file")
-last_page_no = 90
-save_path = os.path.expanduser("~/your/path/to/data/")
+# id_file = os.path.expanduser("~/your/path/to/id/file")
+# last_page_no = 90
+# save_path = os.path.expanduser("~/your/path/to/data/")
 
-ids_file(id_file, last_page_no)
-get_all_questions(id_file, save_path)
+# ids_file(id_file, last_page_no)
+# get_all_questions(id_file, save_path)

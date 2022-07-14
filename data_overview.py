@@ -46,5 +46,7 @@ def print_data_table(id_file, path):
 
 path = os.path.expanduser("~/Desktop/data/")
 id_file = os.path.expanduser("~/Desktop/id_file.txt")
-
 print_data_table(id_file, path)
+# question: 1788
+# forecast: 1228978
+# forecasts w/ written justifications: 273648
