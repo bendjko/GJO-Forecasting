@@ -45,8 +45,8 @@ from nltk.tokenize import *
 # compare # of textual justifications
 def token_length_questions(dataframe):
     question = dataframe.loc['title', 0]
-    question = gensim.utils.simple_preprocess(str(question), deacc=True)
-    print(question)
+    # question = gensim.utils.simple_preprocess(str(question), deacc=True)
+    # print(question)
     token_length = len(word_tokenize(question))
     return token_length
 
@@ -56,18 +56,16 @@ def average_token_length_forecasts(dataframe):
     forecast_count = 0
     justified_forecasts = justified_forecasts['text']
     for text in justified_forecasts:
-        text = gensim.utils.simple_preprocess(str(text), deacc=True) # deacc=True removes
+        # text = gensim.utils.simple_preprocess(str(text), deacc=True) # deacc=True removes
+        # print(text)
         token_length = len(word_tokenize(text))
-        if token_length == 0:
-            print(dataframe.loc['question_id', 0])
-            print(word_tokenize(text))
-            print(token_length)
+        # if token_length == 0:
+        #     print(dataframe.loc['question_id', 0])
+        #     print(word_tokenize(text))
+        #     print(token_length)
         total_token_length += token_length
         forecast_count += 1
-    if forecast_count > 0:
-        return total_token_length/forecast_count
-    else:
-        return 0
+    return total_token_length/forecast_count
 
 def subset_question_forecast_length(sub_id_file, path):
   total_question_length = 0
@@ -83,21 +81,22 @@ def subset_question_forecast_length(sub_id_file, path):
       id_count += 1
   return [total_question_length/id_count, total_forecast_length/id_count]
 
-def sent_to_words(sentences):
-    for sentence in sentences:
-        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
+# def sent_to_words(sentences):
+#     for sentence in sentences:
+#         yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
 
-def lda_topic_visualization(dataframe):
-    question = sent_to_words(dataframe.loc['title', 0])
-    return None
+# def lda_topic_visualization(dataframe):
+#     question = sent_to_words(dataframe.loc['title', 0])
+#     return None
 
 def loop_through_subset(id_file_path, data_file_path):
   options = 2
-  while (options <= 13):
+  while (options <= 4):
     id_file = f"{id_file_path}{options}_questions.txt"
-    print(options, subset_question_forecast_length(id_file, data_file_path))
+    print("options: ", options)
+    print("desired output: ", subset_question_forecast_length(id_file, data_file_path))
     options +=1
 
 # problem
 # justified forecasts not being returned correctly
-# 
+# why is this showing three output in array????
