@@ -56,23 +56,16 @@ def average_token_length_forecasts(dataframe):
     total_token_length = 0
     forecast_count = 0
     justified_forecasts = justified_forecasts['text']
-
     for text in justified_forecasts:
-        # text = gensim.utils.simple_preprocess(str(text), deacc=True)\
-
-        token_length = len(word_tokenize(text))
-        # if token_length == 0:
-        #     print(dataframe.loc['question_id', 0])
-        #     print(text)
-        #     print(word_tokenize(text))
-        #     print(token_length)
+      token_length = len(word_tokenize(text))
+      if token_length > 0:
         total_token_length += token_length
         forecast_count += 1
+      else:
+        print(text)
     if forecast_count > 0:
       return total_token_length/forecast_count
     else: 
-      print("total token length:", total_token_length)
-      print(dataframe.loc["question_id", 0])
       return 0
 
 def subset_question_forecast_length(sub_id_file, path):
