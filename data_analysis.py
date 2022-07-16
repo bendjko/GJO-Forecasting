@@ -45,9 +45,10 @@ from nltk.tokenize import *
 # compare # of textual justifications
 def token_length_questions(dataframe):
     question = dataframe.loc['title', 0]
-    # question = gensim.utils.simple_preprocess(str(question), deacc=True)
-    # print(question)
+    # nom = gensim.utils.simple_preprocess(str(question), deacc=True)
+    # print(len(nom))
     token_length = len(word_tokenize(question))
+    # print(word_tokenize(question))
     return token_length
 
 def average_token_length_forecasts(dataframe):
@@ -55,17 +56,24 @@ def average_token_length_forecasts(dataframe):
     total_token_length = 0
     forecast_count = 0
     justified_forecasts = justified_forecasts['text']
+
     for text in justified_forecasts:
-        # text = gensim.utils.simple_preprocess(str(text), deacc=True) # deacc=True removes
-        # print(text)
+        # text = gensim.utils.simple_preprocess(str(text), deacc=True)\
+
         token_length = len(word_tokenize(text))
         # if token_length == 0:
         #     print(dataframe.loc['question_id', 0])
+        #     print(text)
         #     print(word_tokenize(text))
         #     print(token_length)
         total_token_length += token_length
         forecast_count += 1
-    return total_token_length/forecast_count
+    if forecast_count > 0:
+      return total_token_length/forecast_count
+    else: 
+      print("total token length:", total_token_length)
+      print(dataframe.loc["question_id", 0])
+      return 0
 
 def subset_question_forecast_length(sub_id_file, path):
   total_question_length = 0
@@ -91,11 +99,12 @@ def subset_question_forecast_length(sub_id_file, path):
 
 def loop_through_subset(id_file_path, data_file_path):
   options = 2
-  while (options <= 4):
+  while (options <= 13):
     id_file = f"{id_file_path}{options}_questions.txt"
     print("options: ", options)
     print("desired output: ", subset_question_forecast_length(id_file, data_file_path))
     options +=1
+    # yield subset_question_forecast_length(id_file, data_file_path)
 
 # problem
 # justified forecasts not being returned correctly
