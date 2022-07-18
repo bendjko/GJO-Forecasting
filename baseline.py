@@ -5,6 +5,9 @@ from datetime import datetime
 import warnings
 import os
 
+warnings.filterwarnings("ignore",category=DeprecationWarning)
+warnings.filterwarnings("ignore",category=FutureWarning)
+
 def df(data_file):
   jdata = json.load(open(data_file))
   dataframe = pd.DataFrame.from_dict(jdata, orient='index')
@@ -181,20 +184,57 @@ def loop_through_subset(id_file_path, data_file_path):
   options = 2
   while (options <= 13):
     id_file = f"{id_file_path}{options}_questions.txt"
-    subset_count = subset_forecast_count(id_file, data_file_path)
-    print(options, subset_count)
+    # subset_count = subset_forecast_count(id_file, data_file_path)
+    baseline_sum = baseline_sum_by_question_no(id_file, data_file_path)
+    print("options", options, baseline_sum)
     options+=1
 
-# id_file = os.path.expanduser("~/Desktop/id_file_clear.txt")
-# subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
-# path = os.path.expanduser("~/Desktop/data/")
+def baseline_sum_by_question_no(sub_id_file, path):
+  baseline_array = np.array([0, 0, 0, 0, 0, 0])
+  with open(sub_id_file, "r") as f:
+    for line in f.readlines():
+      question_id = int(line)  
+      data_file = f"{path}question_{question_id}.json"
+      dataframe = df(data_file)
+      arr =  baselines_for_subsets(dataframe)
+      baseline_array += arr
+  return baseline_array
 
+def baselines_for_subsets(dataframe):
+  correct_answer, possible_answers = correct_possible_answer(dataframe)
+  all, text, no_text = which_forecasts(dataframe)
+  mb_all = 0
+  wb_all = 0
+  mb_text = 0
+  wb_text = 0
+  mb_no = 0
+  wb_no = 0
+  if all.empty == False:
+    mb_all += correct_day_counter(correct_answer, possible_answers, majority_baseline(all))
+    wb_all += correct_day_counter(correct_answer, possible_answers, weighted_baseline(all))
+    if no_text.empty == True:
+     mb_text += correct_day_counter(correct_answer, possible_answers, majority_baseline(text))
+     wb_text += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text))
+    elif text.empty == True:
+     mb_no += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text))
+     wb_no += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text))
+    else:
+     mb_text += correct_day_counter(correct_answer, possible_answers, majority_baseline(text))
+     wb_text += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text))
+     mb_no += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text))
+     wb_no += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text))
+  return [mb_all, wb_all, mb_text, wb_text, mb_no, wb_no]
+
+subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
+path = os.path.expanduser("~/Desktop/data/")
+loop_through_subset(subset_id_file, path)
+
+# id_file = os.path.expanduser("~/Desktop/id_file_clear.txt")
 # print(all_questions_baseline(id_file, path))
 # [daily forecast majority baseline, daily forecast weighed baseline, active forecast majority baseline, active forecast weighted baseline]
 # [0.70786752 0.71518103 0.81939237 0.82636818]
 # [0.71961468 0.72112447]
 
-# loop_through_subset(subset_id_file, path)
 # [# of total forecasts, # of forecasts w/o justifications, # of forecasts w/ justifications]
 # 2 [666582 164714 501868]
 # 3 [148718  29192 119526]
@@ -208,3 +248,18 @@ def loop_through_subset(id_file_path, data_file_path):
 # 11 [2554  459 2095]
 # 12 [8189 1765 6424]
 # 13 [978  43 935]
+
+# baseline output by no. of possible options
+# [majority(all), weighted(all), majority(textual justification), weighted(text), majority(no textual justification), weighted(no text)]
+# options 2 [792 796 788 794 789 797]
+# options 3 [162 163 161 167 160 163]
+# options 4 [109 116 114 119 109 116]
+# options 5 [253 261 252 261 248 257]
+# options 6 [27 33 30 31 27 34]
+# options 7 [27 28 28 28 27 28]
+# options 8 [7 7 7 7 7 7]
+# options 9 [11 11 12  9 11 11]
+# options 10 [5 5 4 5 5 5]
+# options 11 [1 2 1 1 1 2]
+# options 12 [4 4 4 4 4 4]
+# options 13 [1 1 1 1 1 1]
