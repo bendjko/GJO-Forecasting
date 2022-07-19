@@ -185,8 +185,9 @@ def loop_through_subset(id_file_path, data_file_path):
   while (options <= 13):
     id_file = f"{id_file_path}{options}_questions.txt"
     # subset_count = subset_forecast_count(id_file, data_file_path)
-    baseline_sum = baseline_sum_by_question_no(id_file, data_file_path)
-    print("options", options, baseline_sum)
+    # baseline_sum = baseline_sum_by_question_no(id_file, data_file_path)
+    question_counter = question_count(id_file, data_file_path)
+    print("options", options, question_counter)
     options+=1
 
 def baseline_sum_by_question_no(sub_id_file, path):
@@ -297,9 +298,21 @@ def baselines_for_subsets(dataframe):
 
   return [allmb, allwb, nomb, nowb, textmb, textwb, allmb2, allwb2, nomb2, nowb2, textmb2, textwb2]
 
-
-
-
+def question_count(sub_id_file, path):
+  question_counter = np.array([0, 0, 0])
+  with open(sub_id_file, "r") as f:
+    for line in f.readlines():
+      question_id = int(line)  
+      data_file = f"{path}question_{question_id}.json"
+      dataframe = df(data_file)
+      all, text, no_text = which_forecasts(dataframe)
+      if all.empty == False:
+        question_counter += [1, 0, 0]
+      if text.empty == False:
+        question_counter += [0, 1, 0]
+      if no_text.empty == False:
+        question_counter += [0,0,1]
+  return question_counter
 
 subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
 path = os.path.expanduser("~/Desktop/data/")
@@ -367,3 +380,17 @@ loop_through_subset(subset_id_file, path)
 #  2.80374453 2.46716143 2.79255004 2.53099817 2.63447049 2.34616102]
 # options 13 [0.41666667 0.36574074 0.4        0.3627907  0.43243243 0.37837838
 #  0.4212963  0.36574074 0.40930233 0.3627907  0.38888889 0.36111111]
+
+#subset question counter [total, text, no text]
+# options 2 [911 906 911]
+# options 3 [212 212 212]
+# options 4 [158 158 158]
+# options 5 [364 364 364]
+# options 6 [57 56 57]
+# options 7 [42 42 42]
+# options 8 [10 10 10]
+# options 9 [18 18 18]
+# options 10 [8 8 8]
+# options 11 [2 2 2]
+# options 12 [5 5 5]
+# options 13 [1 1 1]
