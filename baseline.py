@@ -190,40 +190,116 @@ def loop_through_subset(id_file_path, data_file_path):
     options+=1
 
 def baseline_sum_by_question_no(sub_id_file, path):
-  baseline_array = np.array([0, 0, 0, 0, 0, 0])
+  baseline_array = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ,0.0, 0.0, 0.0, 0.0, 0.0])
   with open(sub_id_file, "r") as f:
     for line in f.readlines():
       question_id = int(line)  
       data_file = f"{path}question_{question_id}.json"
       dataframe = df(data_file)
-      arr =  baselines_for_subsets(dataframe)
+      arr =  np.array(baselines_for_subsets(dataframe))
       baseline_array += arr
   return baseline_array
 
+def which_forecasts_pred(prediction_stack):
+  all_forecasts = prediction_stack
+  justified_forecasts = prediction_stack[prediction_stack['text']!='']
+  not_justified_forecasts = prediction_stack[prediction_stack['text']=='']
+  return all_forecasts, justified_forecasts, not_justified_forecasts
+
 def baselines_for_subsets(dataframe):
   correct_answer, possible_answers = correct_possible_answer(dataframe)
-  all, text, no_text = which_forecasts(dataframe)
-  mb_all = 0
-  wb_all = 0
+  prediction_stack = get_prediction_stack(dataframe)
+  longest_day = prediction_stack["days_past"].max()
+  mb_all = 0 
+  wb_all= 0
+  all_ct = 0
   mb_text = 0
-  wb_text = 0
+  wb_text =0
+  text_ct = 0
   mb_no = 0
   wb_no = 0
-  if all.empty == False:
-    mb_all += correct_day_counter(correct_answer, possible_answers, majority_baseline(all))
-    wb_all += correct_day_counter(correct_answer, possible_answers, weighted_baseline(all))
-    if no_text.empty == True:
-     mb_text += correct_day_counter(correct_answer, possible_answers, majority_baseline(text))
-     wb_text += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text))
-    elif text.empty == True:
-     mb_no += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text))
-     wb_no += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text))
-    else:
-     mb_text += correct_day_counter(correct_answer, possible_answers, majority_baseline(text))
-     wb_text += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text))
-     mb_no += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text))
-     wb_no += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text))
-  return [mb_all, wb_all, mb_text, wb_text, mb_no, wb_no]
+  no_ct = 0
+  mb_all2 = 0
+  wb_all2 = 0
+  all2_ct = 0
+  mb_text2 =0
+  wb_text2 =0
+  text2_ct =0
+  mb_no2 =0
+  wb_no2 = 0
+  no2_ct = 0
+
+  allmb = 0
+  allwb = 0
+  nomb=0
+  nowb = 0
+  textmb = 0
+  textwb = 0
+  allmb2 = 0
+  allwb2 = 0
+  nomb2=0
+  nowb2 = 0
+  textmb2 = 0
+  textwb2 = 0
+
+  while (longest_day >= 0):
+    day_forecast = daily_forecast(prediction_stack, longest_day)
+    all, text, no_text = which_forecasts_pred(day_forecast)
+    if all.empty == False:
+      mb_all += correct_day_counter(correct_answer, possible_answers, majority_baseline(all))
+      wb_all += correct_day_counter(correct_answer, possible_answers, weighted_baseline(all))
+      all_ct += 1
+
+      if no_text.empty == False:
+        mb_no += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text))
+        wb_no += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text))
+        no_ct += 1
+      if text.empty == False:
+        mb_text += correct_day_counter(correct_answer, possible_answers, majority_baseline(text))
+        wb_text += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text))
+        text_ct += 1
+    
+    day_past_forecast = active_forecast_ten_days_prior(prediction_stack, longest_day)
+    all2, text2, no_text2 = which_forecasts_pred(day_past_forecast)
+    if all2.empty == False:
+      mb_all2 += correct_day_counter(correct_answer, possible_answers, majority_baseline(all2))
+      wb_all2 += correct_day_counter(correct_answer, possible_answers, weighted_baseline(all2))
+      all2_ct += 1
+      if no_text2.empty == False:
+        mb_no2 += correct_day_counter(correct_answer, possible_answers, majority_baseline(no_text2))
+        wb_no2 += correct_day_counter(correct_answer, possible_answers, weighted_baseline(no_text2))
+        no2_ct += 1
+      if text2.empty == False:
+        mb_text2 += correct_day_counter(correct_answer, possible_answers, majority_baseline(text2))
+        wb_text2 += correct_day_counter(correct_answer, possible_answers, weighted_baseline(text2))
+        text2_ct += 1
+    
+    longest_day -= 1
+    
+    if all_ct > 0:
+      allmb = mb_all/all_ct
+      allwb = wb_all/all_ct
+    if no_ct > 0:
+      nomb = mb_no/no_ct
+      nowb = wb_no/no_ct
+    if text_ct > 0:
+      textmb = mb_text/text_ct
+      textwb = wb_text/text_ct
+    if all2_ct > 0:
+      allmb2 = mb_all2/all2_ct
+      allwb2 = wb_all2/all2_ct
+    if no2_ct > 0:
+      nomb2 = mb_no2/no2_ct
+      nowb2 = wb_no2/no2_ct
+    if text2_ct > 0:
+      textmb2 = mb_text2/text2_ct
+      textwb2 = wb_text2/text2_ct
+
+  return [allmb, allwb, nomb, nowb, textmb, textwb, allmb2, allwb2, nomb2, nowb2, textmb2, textwb2]
+
+
+
+
 
 subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
 path = os.path.expanduser("~/Desktop/data/")
@@ -263,3 +339,31 @@ loop_through_subset(subset_id_file, path)
 # options 11 [1 2 1 1 1 2]
 # options 12 [4 4 4 4 4 4]
 # options 13 [1 1 1 1 1 1]
+
+# options 2 [743.06232418 751.12440409 741.28797043 749.08179571 695.86574925
+#  709.03089006 743.17306005 750.98926495 741.37500947 749.38742637
+#  697.16840384 710.43812746]
+# options 3 [150.58073084 152.78626225 150.16871392 151.634215   144.02022169
+#  145.6385555  150.50213389 152.56227425 150.08411911 151.85918614
+#  144.36947444 145.73639076]
+# options 4 [93.61946577 94.49009387 92.59027223 93.52902673 90.15814291 92.04758001
+#  93.67700573 94.53357405 92.32304452 93.36207405 90.40700334 91.993378  ]
+# options 5 [205.42206439 206.90775796 203.62687359 204.76427672 199.29632817
+#  200.7195147  205.40691859 207.13502059 204.50488338 204.99664129
+#  199.16395556 200.92641778]
+# options 6 [26.92230396 27.5981468  26.83849988 27.31548728 26.1577279  26.7171335
+#  26.75479437 27.31589433 26.54762634 27.12856117 26.20502104 26.31274111]
+# options 7 [23.28120383 23.25301726 23.06163421 23.15479454 22.81797885 22.54041994
+#  23.23962028 23.14899476 23.0672956  23.01274709 22.72185507 23.02119749]
+# options 8 [6.12707247 6.14764455 5.89430378 5.80290847 5.90687802 5.87112809
+#  5.98389186 5.95395085 5.89469209 5.86797978 5.72811472 5.8979329 ]
+# options 9 [ 9.775924    9.75638937  9.7832442   9.68382415  8.61279369  8.96670829
+#  10.28729462  9.89508683 10.09169274  9.71829385  8.72641803  9.11225164]
+# options 10 [3.26218442 3.28930876 3.21775239 3.3267816  3.32009223 3.40153162
+#  3.30636185 3.38734797 3.33510517 3.38519128 3.34820296 3.59395701]
+# options 11 [0.45018198 0.52161056 0.45092166 0.48663594 0.53832753 0.53832753
+#  0.42083712 0.52161056 0.42165899 0.48663594 0.56684982 0.53113553]
+# options 12 [2.7470105  2.50331055 2.87285744 2.55098287 2.43954254 2.25772436
+#  2.80374453 2.46716143 2.79255004 2.53099817 2.63447049 2.34616102]
+# options 13 [0.41666667 0.36574074 0.4        0.3627907  0.43243243 0.37837838
+#  0.4212963  0.36574074 0.40930233 0.3627907  0.38888889 0.36111111]
