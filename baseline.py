@@ -314,9 +314,9 @@ def question_count(sub_id_file, path):
         question_counter += [0,0,1]
   return question_counter
 
-subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
-path = os.path.expanduser("~/Desktop/data/")
-loop_through_subset(subset_id_file, path)
+# subset_id_file = os.path.expanduser("~/Desktop/data_sub/")
+# path = os.path.expanduser("~/Desktop/data/")
+# loop_through_subset(subset_id_file, path)
 
 # id_file = os.path.expanduser("~/Desktop/id_file_clear.txt")
 # print(all_questions_baseline(id_file, path))
