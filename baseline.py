@@ -64,14 +64,14 @@ def quartile_forecast(prediction_stack, quartile):
 def active_forecast_ten_days_prior(prediction_stack, day):
  if day <= 10:
     first_filter = prediction_stack[prediction_stack['days_past']<=day].drop_duplicates(subset=['user_id'])
-    second_filter = first_filter[first_filter['days_past'] == day]
-    return second_filter
+    # second_filter = first_filter[first_filter['days_past'] == day]
+    return first_filter
  else:
     first_filter= prediction_stack[prediction_stack['days_past']<=day]
     day2 = day - 10
     second_filter = first_filter[first_filter['days_past']>=day2].drop_duplicates(subset=['user_id'])
-    third_filter = second_filter[second_filter['days_past'] == day]
-    return third_filter
+    # third_filter = second_filter[second_filter['days_past'] == day]
+    return second_filter
 
 def correct_day_counter(correct_answer, possible_answers, prediction_index):
   predicted_answer = possible_answers[prediction_index]
