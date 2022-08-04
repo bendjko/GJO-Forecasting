@@ -1,22 +1,13 @@
+from re import L
+from baseline import *
 from transformers import BertTokenizer, BertModel, BertConfig
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from datetime import datetime
 import os
 
-binary_questions = os.path.expanduser("~/Dekstop/data_sub/2_questions.txt")
-
-# class Bert_Model(nn.Module):
-#    def __init__(self):
-#        super(Bert_Model, self).__init__()
-#        self.bert = BertModel.from_pretrained('bert-base-uncased')
-#        self.drop = nn.Dropout(0.5)
-#        self.out = nn.Linear(768, 2)
-#        self.act = nn.ReLU()
-#    def forward(self, input):
-#        output = self.bert(input)
-#        output = self.act(self.drop(self.out(output)))
-#        return output
 
 class Bert_Model(nn.Module):
    def __init__(self):
@@ -30,7 +21,7 @@ class Bert_Model(nn.Module):
        out = self.out(output)
        out = self.act(out)
        out = self.drop(out)
-       return out
+       return out[0]
 
 def preprocess_forecast(text):
    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -45,4 +36,19 @@ def preprocess_forecast(text):
     )
    return encoding
 
-def prediction_representation()
+# figure out new way to represent prediction since number of prediction varies
+# for now, replicate Saketh's representation 
+def binary_prediction_representation(pred):
+    return pred[0]
+
+def binary_flag(question_called, forecast_made):
+    if question_called == forecast_made:
+        return 1
+    else:
+        return 0
+
+def call_questions(dataframe):
+    correct_answer, possible_answers = correct_possible_answer(dataframe)
+    prediction_stack = get_prediction_stack(dataframe)
+    longest_day = prediction_stack["days_past"].max()
+
