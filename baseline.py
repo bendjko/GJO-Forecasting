@@ -41,6 +41,7 @@ def get_prediction_stack(dataframe):
   prediction_stack["days_past"] = day_past
   prediction_stack["quartile"] = quartile
   preds = prediction_stack.loc[:, "pred"]
+  # for binary questions: normalizing array into [Yes, No] format
   if len(prediction_stack.loc[0, "pred"]) == 1:
     for pred in preds:
       pred.append(1- pred[0])

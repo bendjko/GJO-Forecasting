@@ -1,10 +1,12 @@
 from baseline import *
+
 import os
 
 binary_questions = os.path.expanduser("~/Desktop/data_sub/2_questions.txt")
 path = os.path.expanduser("~/Desktop/data/")
 
 print(baseline_sum_by_question_no(binary_questions, path))
+
 
 # Output
 # [allmb, allwb, nomb, nowb, textmb, textwb, allmb2, allwb2, nomb2, nowb2, textmb2, textwb2]
