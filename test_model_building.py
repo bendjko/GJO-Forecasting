@@ -10,7 +10,11 @@ dataframe = df(test_file)
 preds = get_prediction_stack(dataframe)
 clf = Bert_Model()
 for ind in preds.index:
+    # justification = preprocess(preds.iloc[ind]["text"])
+    # print(justification)
+
     pred = preds.iloc[ind]
+    print(pred)
     print(binary_option_forecast_representation(1, pred))
     # size = 1D 256
 
