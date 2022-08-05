@@ -23,7 +23,7 @@ class Bert_Model(nn.Module):
        out = self.drop(out)
        return out[0]
 
-def preprocess_forecast(text):
+def preprocess_justification(text):
    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
    encoding = tokenizer.encode_plus(
     text, 
@@ -43,9 +43,16 @@ def binary_prediction_representation(pred):
 
 def binary_flag(question_called, forecast_made):
     if question_called == forecast_made:
-        return 1
+        return [1]
     else:
-        return 0
+        return [0]
+
+# return concatenated tensor of forecast
+def binary_option_forecast_representation(day, individual_prediction):
+    justification = Bert_Model(str(individual_prediction.loc["text"]))
+    prediction = int(binary_prediction_representation(individual_prediction.loc["pred"]))
+    flag = int(binary_flag(day, individual_prediction.loc["days_past"]))
+    return np.concatenate((prediction, justification, flag), axis=None)
 
 def call_questions(dataframe):
     correct_answer, possible_answers = correct_possible_answer(dataframe)
