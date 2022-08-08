@@ -23,25 +23,18 @@ class Bert_Model(nn.Module):
        out = self.drop(out)
        return out[0]
 
-class LSTMTagger(nn.Module):
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size):
-        super(LSTMTagger, self).__init__()
-        self.hidden_dim = hidden_dim
-
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
-        # with dimensionality hidden_dim.
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim)
-
-        # The linear layer that maps from hidden state space to tag space
-        self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
-    def forward(self, sentence):
-        embeds = self.word_embeddings(sentence)
-        lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
-        tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
-        tag_scores = F.log_softmax(tag_space, dim=1)
-        return tag_scores
+# LSTM input: # of forecast, forecast length(516 in our case), 
+class LSTMlayer(nn.Module):
+    def __init__(self, input_size=50, hidden_size=256):
+        super(LSTMlayer, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size)
+        self.out = nn.Linear(self.lstm.hidden_size, 1)
+        self.sigmoid = nn.Sigmoid()
+    def forward(self, input):
+        output, _ = self.lstm(input)
+        out = self.out(output)
+        out = self.sigmoid(out)
+        return out
 
 def preprocess(text):
    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -73,23 +66,56 @@ def binary_option_forecast_representation(day, individual_prediction):
     justification = clf(preprocess(individual_prediction["text"])).detach().numpy()
     prediction = int(binary_prediction_representation(individual_prediction["pred"]))
     flag = binary_flag(day, individual_prediction["days_past"])
-    return np.concatenate((prediction, justification, flag), axis=None)
+    return torch.from_numpy(np.concatenate((prediction, justification, flag), axis=None))
 
 def question_representation(dataframe):
     clf = Bert_Model()
-    return clf(preprocess(dataframe.loc["title"]))
+    dim_matcher = [0, 0]
+    output = clf(preprocess(dataframe.loc["title"][0])).detach().numpy()
+    return torch.from_numpy(np.concatenate((output, dim_matcher), axis=None))
+
+def binary_option_input(question, forecast):
+    return torch.cat((question, forecast), 0)
 
 def call_questions(dataframe):
     correct_answer, possible_answers = correct_possible_answer(dataframe)
     prediction_stack = get_prediction_stack(dataframe)
     longest_day = prediction_stack["days_past"].max()
 
+# sequence, timestep, feature
+# sequence: number of forecasts
+# timestep: 516
+# feature: 
+
+def concatenate_tensors(tensor1, tensor2):
+    # tensor1 = tensor1.detach().numpy()
+    # tensor2=tensor2.detach().numpy()
+    return np.vstack((tensor1, tensor2))
+
+def return_input_tensor(preds):
+    input_tensor = torch.empty(516)
+    for ind in preds.index:
+        pred = preds.iloc[ind]
+        forecast_rep = binary_option_forecast_representation(1,pred)
+        question_and_forecast = binary_option_input(question_rep, forecast_rep)
+        input_tensor = concatenate_tensors(input_tensor, question_and_forecast)
+        print(input_tensor)
+    return torch.from_numpy(input_tensor)
+
 test_file = os.path.expanduser("~/Desktop/question_1951.json")
 dataframe = df(test_file)
+question_rep = question_representation(dataframe)
 preds = get_prediction_stack(dataframe)
-clf = Bert_Model()
-for ind in preds.index:
-    pred = preds.iloc[ind]
-    print(binary_option_forecast_representation(1,pred))
+input_tensor = return_input_tensor(preds)
+
+print("input_tensor:", input_tensor)
+
+# lstmlayer = LSTMlayer()
+# print(lstmlayer(input_tensor))
 
 
+# outline
+# concatenate input forecast sequence into 3d tensor
+# remove first tensor (randomized tensor) and reconfirm the size 
+# using .view from torch, feed a sequence to lstm layer
+# 
