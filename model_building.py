@@ -1,12 +1,9 @@
-from re import L
 from baseline import *
-from transformers import BertTokenizer, BertModel, BertConfig
+from transformers import BertTokenizer, BertModel
 import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from datetime import datetime
-import os
 
 
 class Bert_Model(nn.Module):
@@ -23,9 +20,8 @@ class Bert_Model(nn.Module):
        out = self.drop(out)
        return out[0]
 
-# LSTM input: # of forecast, forecast length(516 in our case), 
 class LSTMlayer(nn.Module):
-    def __init__(self, input_size=50, hidden_size=256):
+    def __init__(self, input_size=258, hidden_size=256):
         super(LSTMlayer, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size)
         self.out = nn.Linear(self.lstm.hidden_size, 1)
@@ -34,6 +30,44 @@ class LSTMlayer(nn.Module):
         output, _ = self.lstm(input)
         out = self.out(output)
         out = self.sigmoid(out)
+        return out
+
+class LSTMModel(nn.Module):
+    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
+        super(LSTMModel, self).__init__()
+        # Hidden dimensions
+        self.hidden_dim = hidden_dim
+
+        # Number of hidden layers
+        self.layer_dim = layer_dim
+
+        # Building your LSTM
+        # batch_first=True causes input/output tensors to be of shape
+        # (batch_dim, seq_dim, feature_dim)
+        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
+
+        # Readout layer
+        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.sigmoid = nn.Sigmoid()
+        
+
+    def forward(self, x):
+        # Initialize hidden state with zeros
+        h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+
+        # Initialize cell state
+        c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+
+        # 28 time steps
+        # We need to detach as we are doing truncated backpropagation through time (BPTT)
+        # If we don't, we'll backprop all the way to the start even after going through another batch
+        out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
+
+        # Index hidden state of last time step
+        # out.size() --> 100, 28, 100
+        # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! 
+        out = self.fc(out[:, -1, :]) 
+        # out.size() --> 100, 10
         return out
 
 def preprocess(text):
@@ -60,54 +94,37 @@ def binary_flag(question_called, forecast_made):
     else:
         return [0]
 
-# return concatenated tensor of forecast
 def binary_option_forecast_representation(day, individual_prediction):
     clf = Bert_Model()
     justification = clf(preprocess(individual_prediction["text"])).detach().numpy()
     prediction = int(binary_prediction_representation(individual_prediction["pred"]))
     flag = binary_flag(day, individual_prediction["days_past"])
-    return torch.from_numpy(np.concatenate((prediction, justification, flag), axis=None))
+    return np.concatenate((prediction, justification, flag), axis=None)
 
 def question_representation(dataframe):
     clf = Bert_Model()
     place_holder = np.array([[0]])
     output = clf(preprocess(dataframe.loc["title"][0])).detach().numpy()
-    return torch.from_numpy(np.append(output, [0,0]))
+    return np.append(output, [0,0])
+
+# concatenates question and justification into 3d tensor
+# torch.Size([1, 2, 258])
 def binary_option_input(question, forecast):
-    return torch.from_numpy(np.vstack((question,forecast)))
-    # return torch.cat((question, forecast), 0)
+    input = np.vstack((question,forecast))
+    input = torch.from_numpy(input)
+    # input = torch.reshape(input, (258, 2))
+    input = torch.unsqueeze(input, 0)
+    return input
 
-
-# sequence, timestep, feature
-# sequence: number of forecasts
-# timestep: 514
-# feature: 
-
-def concatenate_tensors(tensor1, tensor2):
-    return torch.vstack((tensor1, tensor2))
-
+# concatenates each forecast into 3d tensor for final input to lstm
 def return_input_tensor(preds):
-    input_tensor = torch.empty(514)
+    input_tensor = torch.empty(2, 258, 1)
     for ind in preds.index:
         pred = preds.iloc[ind]
         forecast_rep = binary_option_forecast_representation(1,pred)
-        question_and_forecast = binary_option_input(question_rep, forecast_rep)
-
-        print("QUESTION_AND_FORECAST:", question_and_forecast)
-        print("SIZE:", question_and_forecast.size())
-
-        input_tensor = concatenate_tensors(input_tensor, question_and_forecast)
-
-        print("SIZE2:", input_tensor.size())
-
     row_exclude = 1
     input_tensor = torch.from_numpy(input_tensor)
     input_tensor = torch.cat((input_tensor[:row_exclude],input_tensor[row_exclude+1:]))
-
-    print("INPUT_TENSOR:", input_tensor)
-    print("SIZE:", input_tensor.size())
-
-     #[x, 514] sized 2d  tensor
     return input_tensor
 
 
@@ -116,19 +133,4 @@ def call_questions(dataframe):
     prediction_stack = get_prediction_stack(dataframe)
     longest_day = prediction_stack["days_past"].max()
 
-test_file = os.path.expanduser("~/Desktop/question_1951.json")
-dataframe = df(test_file)
-question_rep = question_representation(dataframe)
-print(question_rep)
-preds = get_prediction_stack(dataframe)
-input_tensor = return_input_tensor(preds)
 
-# lstmlayer = LSTMlayer()
-# print(lstmlayer(input_tensor))
-
-
-# outline
-# concatenate input forecast sequence into 3d tensor
-# remove first tensor (randomized tensor) and reconfirm the size 
-# using .view from torch, feed a sequence to lstm layer
-# 
